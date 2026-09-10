@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seguimiento — Hostech Conecta</title>
+<style>
+  body { margin: 0; padding: 24px 14px; background: #f0edf2; }
+  #hc-panel {
+    --purple: #9d20b7;
+    --orange: #e09717;
+    --teal: #18b59b;
+    --ink: #201c24;
+    --ink-soft: #5c5764;
+    --line: #e6e1ea;
+    --paper: #fffdfc;
+    --paper-sunk: #f7f4f8;
+    font-family: 'Fira Sans', 'Segoe UI', system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    max-width: 900px;
+    margin: 0 auto;
+    line-height: 1.45;
+  }
+  #hc-panel * { box-sizing: border-box; }
+  #hc-panel .hc-head {
+    padding: 28px 26px 22px;
+    border-bottom: 1px solid var(--line);
+  }
+  #hc-panel .hc-strip {
+    height: 6px;
+    width: 100%;
+    background: linear-gradient(90deg, var(--purple), var(--orange), var(--teal));
+    border-radius: 3px;
+    margin-bottom: 18px;
+  }
+  #hc-panel .hc-title { font-size: 22px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
+  #hc-panel .hc-sub { font-size: 14px; color: var(--ink-soft); margin: 0; }
+
+  #hc-panel .hc-overview {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 18px 26px;
+    border-bottom: 1px solid var(--line);
+  }
+  #hc-panel .hc-ov-card {
+    background: var(--paper-sunk);
+    border-radius: 10px;
+    padding: 12px 14px;
+    border-top: 3px solid var(--c, var(--ink));
+  }
+  #hc-panel .hc-ov-label { font-size: 11.5px; color: var(--ink-soft); margin-bottom: 6px; }
+  #hc-panel .hc-ov-num { font-size: 22px; font-weight: 700; }
+  #hc-panel .hc-bar-track { height: 6px; background: #e9e5ee; border-radius: 4px; margin-top: 8px; overflow: hidden; }
+  #hc-panel .hc-bar-fill { height: 100%; background: var(--c, var(--ink)); border-radius: 4px; transition: width .35s ease; }
+
+  #hc-panel .hc-phasebar {
+    display: flex;
+    gap: 6px;
+    padding: 14px 26px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--line);
+  }
+  #hc-panel .hc-phasebtn {
+    flex: 1 1 0;
+    min-width: 150px;
+    text-align: left;
+    background: var(--paper-sunk);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 9px 12px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  #hc-panel .hc-phasebtn.active { background: var(--ink); border-color: var(--ink); }
+  #hc-panel .hc-phasebtn.active .hc-pb-t, #hc-panel .hc-phasebtn.active .hc-pb-d { color: #fff; }
+  #hc-panel .hc-pb-t { font-size: 12.5px; font-weight: 700; color: var(--ink); }
+  #hc-panel .hc-pb-d { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+
+  #hc-panel .hc-body { padding: 22px 26px 30px; }
+  #hc-panel .hc-phase-title { font-size: 17px; font-weight: 700; margin: 0 0 2px; }
+  #hc-panel .hc-phase-window { font-size: 13px; color: var(--ink-soft); margin: 0 0 18px; }
+
+  #hc-panel .hc-area-group { margin-bottom: 20px; }
+  #hc-panel .hc-area-head {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12.5px; font-weight: 700; color: var(--c, var(--ink));
+    margin-bottom: 8px;
+  }
+  #hc-panel .hc-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--ink)); flex-shrink: 0; }
+
+  #hc-panel .hc-task {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    border-left: 3px solid var(--tone, var(--line));
+    flex-wrap: wrap;
+  }
+  #hc-panel .hc-task:hover { background: var(--paper-sunk); }
+  #hc-panel .hc-task-text-input {
+    font-size: 14px; flex: 1 1 220px; min-width: 160px; border: 1px solid transparent;
+    background: transparent; font-family: inherit; color: var(--ink); border-radius: 6px; padding: 4px 6px;
+  }
+  #hc-panel .hc-task-text-input:hover, #hc-panel .hc-task-text-input:focus {
+    border-color: var(--line); background: #fff; outline: none;
+  }
+  #hc-panel .hc-task.tone-done .hc-task-text-input { color: var(--ink-soft); }
+  #hc-panel .hc-task.tone-excluded .hc-task-text-input { color: var(--ink-soft); text-decoration: line-through; }
+  #hc-panel .hc-month-select {
+    font-size: 11.5px; border-radius: 7px; padding: 5px 6px; border: 1px solid var(--line);
+    background: #fff; font-family: inherit; cursor: pointer; flex-shrink: 0; color: var(--ink-soft); max-width: 92px;
+  }
+  #hc-panel .hc-task-select {
+    font-size: 12px; border-radius: 7px; padding: 6px 8px; border: 1px solid var(--line);
+    background: #fff; font-family: inherit; cursor: pointer; flex-shrink: 0; color: var(--tone, var(--ink));
+    font-weight: 600; max-width: 150px;
+  }
+  #hc-panel .hc-task-weight { font-size: 11px; color: var(--ink-soft); width: 34px; text-align: right; flex-shrink: 0; }
+  #hc-panel .hc-custom-tag {
+    font-size: 10px; color: var(--ink-soft); background: var(--paper-sunk); border: 1px solid var(--line);
+    border-radius: 5px; padding: 1px 6px; flex-shrink: 0;
+  }
+  #hc-panel .hc-task-del {
+    background: none; border: none; color: var(--ink-soft); font-size: 16px; line-height: 1;
+    cursor: pointer; padding: 2px 6px; flex-shrink: 0; border-radius: 5px;
+  }
+  #hc-panel .hc-task-del:hover { background: #fbe4e1; color: #c0392b; }
+
+  #hc-panel .hc-addtask {
+    display: flex; gap: 8px; align-items: center;
+    margin: 10px 0 4px; padding: 10px; border: 1px dashed var(--line); border-radius: 9px;
+  }
+  #hc-panel .hc-addtask select {
+    font-size: 12.5px; border-radius: 7px; padding: 7px 8px; border: 1px solid var(--line);
+    background: #fff; font-family: inherit; flex-shrink: 0; max-width: 150px;
+  }
+  #hc-panel .hc-addtask input {
+    font-size: 13px; border-radius: 7px; padding: 7px 10px; border: 1px solid var(--line);
+    background: #fff; font-family: inherit; flex: 1; min-width: 0;
+  }
+  #hc-panel .hc-addtask button {
+    font-size: 12.5px; font-weight: 600; border-radius: 7px; padding: 8px 12px; border: none;
+    background: var(--ink); color: #fff; cursor: pointer; font-family: inherit; flex-shrink: 0;
+    white-space: nowrap;
+  }
+  #hc-panel .hc-addtask button:hover { opacity: 0.88; }
+
+  #hc-panel .hc-kpibtn { border-color: var(--purple); background: #faf3fb; }
+  #hc-panel .hc-kpibtn.active { background: var(--purple); border-color: var(--purple); }
+
+  #hc-panel .hc-kpi {
+    display: grid;
+    grid-template-columns: 1.6fr 0.7fr 0.7fr 0.7fr 1.3fr;
+    gap: 10px 12px;
+    align-items: center;
+    padding: 14px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  #hc-panel .hc-kpi-title { font-size: 14px; font-weight: 600; }
+  #hc-panel .hc-kpi-desc { font-size: 11.5px; color: var(--ink-soft); margin-top: 2px; }
+  #hc-panel .hc-kpi-field { display: flex; flex-direction: column; gap: 4px; font-size: 10.5px; color: var(--ink-soft); }
+  #hc-panel .hc-kpi-field input {
+    font-size: 13px; border-radius: 7px; padding: 6px 7px; border: 1px solid var(--line);
+    background: #fff; font-family: inherit; width: 100%;
+  }
+  #hc-panel .hc-kpi-progress { display: flex; flex-direction: column; gap: 3px; }
+  #hc-panel .hc-kpi-pct { font-size: 13px; font-weight: 700; color: var(--purple); }
+  #hc-panel .hc-kpi-unit { font-size: 10.5px; color: var(--ink-soft); }
+
+  #hc-panel .hc-foot {
+    padding: 12px 26px 20px; font-size: 11.5px; color: var(--ink-soft);
+  }
+
+  @media (max-width: 640px) {
+    #hc-panel .hc-overview { grid-template-columns: repeat(2, 1fr); }
+    #hc-panel .hc-kpi { grid-template-columns: 1fr 1fr; }
+    #hc-panel .hc-kpi-progress { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+
+<div id="hc-panel">
+  <div class="hc-head">
+    <div class="hc-strip"></div>
+    <p class="hc-title">Seguimiento — Hostech Conecta</p>
+    <p class="hc-sub">Panel colaborativo de Operaciones, Marketing y Desarrollo · marca aquí los avances a medida que ocurren</p>
+  </div>
+
+  <div class="hc-overview" id="hc-overview"></div>
+
+  <div class="hc-phasebar" id="hc-phasebar"></div>
+
+  <div class="hc-body" id="hc-body"></div>
+
+  <div class="hc-foot">
+    <span id="hc-savestate">Cargando…</span>
+  </div>
+</div>
+
+<script>
+(function () {
+  // URL del Web App de Apps Script (ver code.gs / guía de despliegue).
+  // Debe reemplazarse después de desplegar el backend en Google Sheets.
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHq9z3WrZ9ZDxru-fh6jW2sYpLf8TbClIeDMuRhcocNQqWOM2ZsynxK6lMRZQchSS9LA/exec";
+
+  async function storageGet(key) {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "get", key }),
+    });
+    const data = await res.json();
+    if (!data || data.value === null || data.value === undefined || data.value === "") return null;
+    return { key, value: data.value };
+  }
+
+  async function storageSet(key, value) {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "set", key, value }),
+    });
+    return res.json();
+  }
+
+  const AREAS = {
+    ops:  { label: "Operaciones — Xareni", color: "var(--teal)" },
+    mkt:  { label: "Marketing — Emmanuel", color: "var(--orange)" },
+    dev:  { label: "Desarrollo — Paloma", color: "var(--purple)" },
+    all:  { label: "Conjunta — las tres áreas", color: "var(--ink)" },
+  };
+
+  const PHASES = [
+    {
+      id: "f1", label: "Fase 1 · Planeación", window: "Días 0–45",
+      tasks: [
+        { id: "t1", area: "all", text: "Sesión de formalización: objetivo, tareas, indicadores y calendario" },
+        { id: "t2", area: "all", text: "Presentación del proyecto integrado a Dirección" },
+        { id: "t23", area: "ops", text: "Definir qué canales actuales se quedan y cuáles se descontinúan, con sus reglas de uso, y comunicarlo junto con el arranque del proyecto" },
+        { id: "t4", area: "ops", text: "Implementar la matriz de escalamiento y la tipificación de casos" },
+        { id: "t9", area: "dev", text: "Aplicar la línea base de habilidades de comunicación de líderes" },
+      ],
+    },
+    {
+      id: "f2", label: "Fase 2 · Lanzamiento e implementación", window: "Días 46–90",
+      tasks: [
+        { id: "t3", area: "ops", text: "Estandarizar SLA y flujo de tickets en Zoho Desk entre áreas clave" },
+        { id: "t5", area: "ops", text: "Formalizar agenda y minuta del ritual Abordaje Interáreas" },
+        { id: "t10", area: "ops", text: "Dar seguimiento a los acuerdos documentados por área" },
+        { id: "t6", area: "mkt", text: "Publicar y distribuir el brandbook de comunicación interna" },
+        { id: "t7", area: "mkt", text: "Lanzar la narrativa y los mensajes territoriales de Hostech Conecta" },
+        { id: "t11", area: "mkt", text: "Diseñar el calendario de contenidos (historias de equipo, reconocimiento, voz de Dirección)" },
+        { id: "t8", area: "dev", text: "Diseñar e impartir el taller de lanzamiento \u201cHostech Conecta en Acción\u201d" },
+        { id: "t12", area: "dev", text: "Formar facilitadores internos (Train the Trainers)" },
+        { id: "t13", area: "dev", text: "Acompañar la adopción en los rituales clave" },
+        { id: "t14", area: "all", text: "Primer espacio de avances conjuntos entre las tres áreas" },
+      ],
+    },
+    {
+      id: "f3", label: "Fase 3 · Primer corte", window: "Días 91–120",
+      tasks: [
+        { id: "t15", area: "all", text: "Levantar el pulso intermedio de los indicadores estratégicos" },
+        { id: "t16", area: "all", text: "Presentar el primer corte de resultados a Dirección con el tablero de indicadores" },
+        { id: "t17", area: "mkt", text: "Auditar el material interno nuevo publicado bajo la narrativa de Hostech Conecta" },
+        { id: "t18", area: "dev", text: "Aplicar el pulso de transferencia de habilidades de comunicación de líderes" },
+      ],
+    },
+    {
+      id: "f4", label: "Fase 4 · Continuidad", window: "Día 121 → mes 12",
+      tasks: [
+        { id: "t19", area: "mkt", text: "Producir material de visual branding para rituales y canales (continuo)" },
+        { id: "t20", area: "ops", text: "Mantener el seguimiento de acuerdos y escalamiento (continuo)" },
+        { id: "t21", area: "all", text: "Mantener el espacio recurrente de avances conjuntos (continuo)" },
+        { id: "t22", area: "all", text: "Evaluación de impacto a 12 meses: medir el cambio neto vs. línea base" },
+      ],
+    },
+  ];
+
+  const TASK_STATUSES = [
+    { id: "none",        label: "Sin iniciar",        weight: 0,    tone: "var(--ink-soft)" },
+    { id: "started",     label: "Iniciada",           weight: 15,   tone: "var(--teal)" },
+    { id: "progress",    label: "En progreso",        weight: 50,   tone: "var(--orange)" },
+    { id: "done",        label: "Completada",         weight: 100,  tone: "var(--purple)" },
+    { id: "dependency",  label: "Con dependencia",    weight: 0,    tone: "#c0392b" },
+    { id: "rescheduled", label: "Reprogramada",       weight: 0,    tone: "var(--ink-soft)" },
+    { id: "na",          label: "No aplica este año", weight: null, tone: "var(--ink-soft)" },
+  ];
+  const STATUS_BY_ID = Object.fromEntries(TASK_STATUSES.map(s => [s.id, s]));
+
+  const MONTHS = ["Sin definir", "Mes 1", "Mes 2", "Mes 3", "Mes 4", "Mes 5", "Mes 6", "Mes 7", "Mes 8", "Mes 9", "Mes 10", "Mes 11", "Mes 12"];
+
+  // KPI's estratégicos consolidados (antes repartidos por fase). Los operativos
+  // tipo "brandbook publicado" ya se siguen como tareas, así que no se duplican aquí.
+  const KPIS = [
+    { id: "k1", text: "Claridad informativa", desc: "% que sabe dónde encontrar información oficial", unit: "de 5", direction: "up", defBase: 2, defMeta: 4 },
+    { id: "k2", text: "Puntualidad entre áreas", desc: "Entregables percibidos a tiempo", unit: "%", direction: "up", defBase: 37, defMeta: 70 },
+    { id: "k3", text: "Barreras de comunicación", desc: "Reporta cambios no comunicados formalmente", unit: "%", direction: "down", defBase: 54, defMeta: 25 },
+    { id: "k4", text: "Escalabilidad de casos", desc: "% de casos que se escala", unit: "%", direction: "down", defBase: 35, defMeta: 20 },
+    { id: "k5", text: "Participación en rituales", desc: "Asistencia a Abordaje Interáreas y Hostech Conecta", unit: "%", direction: "up", defBase: 0, defMeta: 80 },
+    { id: "k6", text: "Adopción de la narrativa (Marketing)", desc: "Material interno nuevo alineado al brandbook", unit: "%", direction: "up", defBase: 0, defMeta: 100 },
+    { id: "k7", text: "Habilidades de comunicación de líderes (Desarrollo)", desc: "Vs. línea base levantada en Fase 1", unit: "pts", direction: "up", defBase: 0, defMeta: 100 },
+  ];
+
+  const STATUS_OPTS = ["Sin iniciar", "En progreso", "Logrado", "En riesgo"];
+  const STORE_KEY = "hostech-conecta-tracking";
+  let state = { tasks: {}, custom: {}, deleted: {}, edits: {}, months: {}, kpis: {} };
+  let activePhase = PHASES[0].id;
+  const root = document.getElementById("hc-panel");
+  const saveEl = document.getElementById("hc-savestate");
+
+  function defaultKpis() {
+    const obj = {};
+    KPIS.forEach(k => { obj[k.id] = { base: k.defBase, meta: k.defMeta, actual: k.defBase }; });
+    return obj;
+  }
+
+  async function load() {
+    if (APPS_SCRIPT_URL.indexOf("PEGA_AQUI") === 0) {
+      saveEl.textContent = "⚠️ Falta pegar la URL del Apps Script desplegado (ver code.gs / guía)";
+      render();
+      return;
+    }
+    try {
+      const res = await storageGet(STORE_KEY);
+      if (res && res.value) state = JSON.parse(res.value);
+    } catch (e) { /* no hay datos aún o el backend no está configurado */ }
+    if (!state.custom) state.custom = {};
+    if (!state.tasks) state.tasks = {};
+    if (!state.deleted) state.deleted = {};
+    if (!state.edits) state.edits = {};
+    if (!state.months) state.months = {};
+    if (!state.kpis) state.kpis = {};
+    const defs = defaultKpis();
+    KPIS.forEach(k => { if (!state.kpis[k.id]) state.kpis[k.id] = defs[k.id]; });
+    // migrar datos viejos: checkbox booleano y estatus "bloqueada" retirado
+    Object.keys(state.tasks || {}).forEach(id => {
+      const v = state.tasks[id];
+      if (v === true) state.tasks[id] = "done";
+      else if (v === false) state.tasks[id] = "none";
+      else if (v === "blocked") state.tasks[id] = "dependency";
+    });
+    delete state.indicators;
+    render();
+  }
+
+  let saveTimer = null;
+  async function save() {
+    saveEl.textContent = "Guardando…";
+    try {
+      await storageSet(STORE_KEY, JSON.stringify(state));
+      saveEl.textContent = "Cambios guardados en Google Sheets · visible para las tres áreas";
+    } catch (e) {
+      saveEl.textContent = "No se pudo guardar. Revisa tu conexión o la configuración del backend.";
+    }
+  }
+  function queueSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(save, 350);
+  }
+
+  function phaseTasks(phase) {
+    return phase.tasks.concat(state.custom[phase.id] || [])
+      .filter(t => !state.deleted[t.id])
+      .map(t => state.edits[t.id] !== undefined ? { ...t, text: state.edits[t.id] } : t);
+  }
+  function allTasks() { return PHASES.flatMap(p => phaseTasks(p)); }
+  function taskStatus(id) { return STATUS_BY_ID[state.tasks[id]] || STATUS_BY_ID.none; }
+
+  // Peso progresivo: Iniciada 15% · En progreso 50% · Completada 100%.
+  // Bloqueada / con dependencia / reprogramada cuentan como 0% (siguen pendientes).
+  // "No aplica este año" se excluye por completo del cálculo.
+  function areaProgress(areaKey) {
+    const list = (areaKey === "__all__" ? allTasks() : allTasks().filter(t => t.area === areaKey))
+      .filter(t => state.tasks[t.id] !== "na");
+    if (!list.length) return null;
+    const sum = list.reduce((acc, t) => acc + taskStatus(t.id).weight, 0);
+    return Math.round(sum / list.length);
+  }
+
+  function renderOverview() {
+    const ov = document.getElementById("hc-overview");
+    const cards = [
+      { key: "__all__", label: "Avance general" },
+      { key: "ops", label: "Operaciones" },
+      { key: "mkt", label: "Marketing" },
+      { key: "dev", label: "Desarrollo" },
+    ];
+    ov.innerHTML = cards.map(c => {
+      const pct = areaProgress(c.key);
+      const color = c.key === "__all__" ? "var(--ink)" : AREAS[c.key].color;
+      const display = pct === null ? "—" : pct + "%";
+      const width = pct === null ? 0 : pct;
+      return `<div class="hc-ov-card" style="--c:${color}">
+        <div class="hc-ov-label">${c.label}</div>
+        <div class="hc-ov-num">${display}</div>
+        <div class="hc-bar-track"><div class="hc-bar-fill" style="--c:${color};width:${width}%"></div></div>
+      </div>`;
+    }).join("");
+  }
+
+  function renderPhasebar() {
+    const bar = document.getElementById("hc-phasebar");
+    const phaseBtns = PHASES.map(p => `
+      <button class="hc-phasebtn${p.id === activePhase ? " active" : ""}" data-phase="${p.id}">
+        <div class="hc-pb-t">${p.label}</div>
+        <div class="hc-pb-d">${p.window}</div>
+      </button>
+    `).join("");
+    const kpiBtn = `
+      <button class="hc-phasebtn hc-kpibtn${activePhase === "kpis" ? " active" : ""}" data-phase="kpis">
+        <div class="hc-pb-t">📊 KPI's</div>
+        <div class="hc-pb-d">Seguimiento numérico</div>
+      </button>
+    `;
+    bar.innerHTML = phaseBtns + kpiBtn;
+    bar.querySelectorAll(".hc-phasebtn").forEach(btn => {
+      btn.addEventListener("click", () => { activePhase = btn.dataset.phase; render(); });
+    });
+  }
+
+  function render() {
+    renderOverview();
+    renderPhasebar();
+    if (activePhase === "kpis") renderKPIBody();
+    else renderBody();
+  }
+
+  function renderBody() {
+    const phase = PHASES.find(p => p.id === activePhase);
+    const body = document.getElementById("hc-body");
+
+    const byArea = {};
+    phaseTasks(phase).forEach(t => { (byArea[t.area] = byArea[t.area] || []).push(t); });
+    const areaOrder = ["ops", "mkt", "dev", "all"];
+
+    const tasksHtml = areaOrder.filter(a => byArea[a]).map(areaKey => {
+      const area = AREAS[areaKey];
+      const items = byArea[areaKey].map(t => {
+        const st = taskStatus(t.id);
+        const weightLabel = st.weight === null ? "excl." : st.weight + "%";
+        const toneClass = st.id === "done" ? "tone-done" : st.id === "na" ? "tone-excluded" : "";
+        const opts = TASK_STATUSES.map(s => `<option value="${s.id}" ${s.id === st.id ? "selected" : ""}>${s.label}</option>`).join("");
+        const isCustom = t.id.startsWith("custom-");
+        const month = state.months[t.id] || 0;
+        const monthOpts = MONTHS.map((m, i) => `<option value="${i}" ${i === month ? "selected" : ""}>${m}</option>`).join("");
+        return `<div class="hc-task ${toneClass}" style="--tone:${st.tone}">
+          <input type="text" class="hc-task-text-input" data-edit="${t.id}" value="${t.text.replace(/"/g, '&quot;')}">
+          ${isCustom ? '<span class="hc-custom-tag">agregada</span>' : ""}
+          <select class="hc-month-select" data-month="${t.id}" title="Mes objetivo">${monthOpts}</select>
+          <span class="hc-task-weight">${weightLabel}</span>
+          <select class="hc-task-select" data-task="${t.id}" style="--tone:${st.tone}">${opts}</select>
+          <button class="hc-task-del" data-delete="${t.id}" data-custom="${isCustom}" title="Eliminar tarea">×</button>
+        </div>`;
+      }).join("");
+      return `<div class="hc-area-group">
+        <div class="hc-area-head" style="--c:${area.color}"><span class="hc-dot" style="--c:${area.color}"></span>${area.label}</div>
+        ${items}
+      </div>`;
+    }).join("");
+
+    const areaOptsHtml = Object.keys(AREAS).map(k => `<option value="${k}">${AREAS[k].label}</option>`).join("");
+    const addTaskHtml = `
+      <div class="hc-addtask">
+        <select id="add-area">${areaOptsHtml}</select>
+        <input type="text" id="add-text" placeholder="Nueva tarea para esta fase…">
+        <button id="add-btn" type="button">+ Agregar tarea</button>
+      </div>
+    `;
+
+    body.innerHTML = `
+      <p class="hc-phase-title">${phase.label}</p>
+      <p class="hc-phase-window">${phase.window} · % de avance = promedio de peso por estatus (Iniciada 15% · En progreso 50% · Completada 100%; con dependencia y reprogramada = 0%; "no aplica este año" se excluye del cálculo). El mes es solo referencia de calendario.</p>
+      ${tasksHtml}
+      ${addTaskHtml}
+    `;
+
+    body.querySelectorAll("[data-task]").forEach(sel => {
+      sel.addEventListener("change", () => {
+        state.tasks[sel.dataset.task] = sel.value;
+        render();
+        queueSave();
+      });
+    });
+    body.querySelectorAll("[data-month]").forEach(sel => {
+      sel.addEventListener("change", () => {
+        state.months[sel.dataset.month] = parseInt(sel.value, 10);
+        queueSave();
+      });
+    });
+    body.querySelectorAll("[data-edit]").forEach(inp => {
+      inp.addEventListener("change", () => {
+        state.edits[inp.dataset.edit] = inp.value;
+        queueSave();
+      });
+    });
+    body.querySelectorAll("[data-delete]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.delete;
+        const isCustom = btn.dataset.custom === "true";
+        if (!confirm(isCustom ? "¿Eliminar esta tarea agregada?" : "¿Eliminar esta tarea del plan original? Puedes recuperarla solo reiniciando todo el panel.")) return;
+        if (isCustom) {
+          state.custom[phase.id] = (state.custom[phase.id] || []).filter(t => t.id !== id);
+        } else {
+          state.deleted[id] = true;
+        }
+        delete state.tasks[id];
+        delete state.edits[id];
+        delete state.months[id];
+        render();
+        queueSave();
+      });
+    });
+    const addBtn = document.getElementById("add-btn");
+    if (addBtn) {
+      addBtn.addEventListener("click", () => {
+        const textInp = document.getElementById("add-text");
+        const areaSel = document.getElementById("add-area");
+        const text = textInp.value.trim();
+        if (!text) { textInp.focus(); return; }
+        const id = "custom-" + phase.id + "-" + Date.now();
+        state.custom[phase.id] = state.custom[phase.id] || [];
+        state.custom[phase.id].push({ id, area: areaSel.value, text });
+        render();
+        queueSave();
+      });
+      const textInp = document.getElementById("add-text");
+      textInp.addEventListener("keydown", (e) => { if (e.key === "Enter") addBtn.click(); });
+    }
+  }
+
+  function kpiProgress(kpi, rec) {
+    const { base, meta, actual } = rec;
+    if (meta === base) return actual >= meta ? 100 : 0;
+    let pct;
+    if (kpi.direction === "up") pct = (actual - base) / (meta - base) * 100;
+    else pct = (base - actual) / (base - meta) * 100;
+    return Math.max(0, Math.min(100, Math.round(pct)));
+  }
+
+  function renderKPIBody() {
+    const body = document.getElementById("hc-body");
+    const rows = KPIS.map(k => {
+      const rec = state.kpis[k.id];
+      const pct = kpiProgress(k, rec);
+      const dirLabel = k.direction === "up" ? "↑ mientras más alto, mejor" : "↓ mientras más bajo, mejor";
+      return `<div class="hc-kpi">
+        <div class="hc-kpi-name">
+          <div class="hc-kpi-title">${k.text}</div>
+          <div class="hc-kpi-desc">${k.desc} · ${dirLabel}</div>
+        </div>
+        <label class="hc-kpi-field"><span>Línea base</span><input type="number" step="any" data-kpi="base" data-id="${k.id}" value="${rec.base}"></label>
+        <label class="hc-kpi-field"><span>Meta</span><input type="number" step="any" data-kpi="meta" data-id="${k.id}" value="${rec.meta}"></label>
+        <label class="hc-kpi-field"><span>Actual</span><input type="number" step="any" data-kpi="actual" data-id="${k.id}" value="${rec.actual}"></label>
+        <div class="hc-kpi-progress">
+          <div class="hc-kpi-pct">${pct}%</div>
+          <div class="hc-bar-track"><div class="hc-bar-fill" style="--c:var(--purple);width:${pct}%"></div></div>
+          <div class="hc-kpi-unit">${rec.actual}${k.unit ? " " + k.unit : ""}</div>
+        </div>
+      </div>`;
+    }).join("");
+
+    body.innerHTML = `
+      <p class="hc-phase-title">Indicadores de éxito (KPI's)</p>
+      <p class="hc-phase-window">Métricas estratégicas del proyecto completo. Actualiza "Actual" cada vez que midan, y el % de avance se calcula solo respecto a la línea base y la meta.</p>
+      ${rows}
+    `;
+
+    body.querySelectorAll("[data-kpi]").forEach(inp => {
+      inp.addEventListener("change", () => {
+        const id = inp.dataset.id;
+        const field = inp.dataset.kpi;
+        const val = parseFloat(inp.value);
+        state.kpis[id][field] = isNaN(val) ? 0 : val;
+        render();
+        queueSave();
+      });
+    });
+  }
+
+  load();
+})();
+</script>
+
+</body>
+</html>
