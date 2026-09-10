@@ -35,7 +35,22 @@
     margin-bottom: 18px;
   }
   #hc-panel .hc-title { font-size: 22px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
-  #hc-panel .hc-sub { font-size: 14px; color: var(--ink-soft); margin: 0; }
+  #hc-panel .hc-sub { font-size: 14px; color: var(--ink-soft); margin: 0 0 12px; }
+  #hc-panel .hc-syncbar {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 12px; font-weight: 600; padding: 5px 11px 5px 9px;
+    border-radius: 999px; border: 1px solid var(--line); background: var(--paper-sunk);
+  }
+  #hc-panel .hc-sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-soft); flex-shrink: 0; }
+  #hc-panel .hc-syncbar.local .hc-sync-dot { background: #d69a1a; }
+  #hc-panel .hc-syncbar.local { color: #8a6512; border-color: #ecd9ad; background: #fdf6e6; }
+  #hc-panel .hc-syncbar.syncing .hc-sync-dot { background: var(--orange); animation: hc-pulse 1s ease-in-out infinite; }
+  #hc-panel .hc-syncbar.syncing { color: #8a5c0f; border-color: #f3d8a8; background: #fef3e2; }
+  #hc-panel .hc-syncbar.synced .hc-sync-dot { background: var(--teal); }
+  #hc-panel .hc-syncbar.synced { color: #0f7a68; border-color: #b9e6de; background: #eafaf6; }
+  #hc-panel .hc-syncbar.error .hc-sync-dot { background: #c0392b; }
+  #hc-panel .hc-syncbar.error { color: #a5301f; border-color: #f0c1ba; background: #fdece9; }
+  @keyframes hc-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
 
   #hc-panel .hc-overview {
     display: grid;
@@ -186,6 +201,7 @@
     <div class="hc-strip"></div>
     <p class="hc-title">Seguimiento — Hostech Conecta</p>
     <p class="hc-sub">Panel colaborativo de Operaciones, Marketing y Desarrollo · marca aquí los avances a medida que ocurren</p>
+    <div class="hc-syncbar" id="hc-syncbar"><span class="hc-sync-dot"></span><span id="hc-syncstate">Cargando…</span></div>
   </div>
 
   <div class="hc-overview" id="hc-overview"></div>
@@ -193,10 +209,6 @@
   <div class="hc-phasebar" id="hc-phasebar"></div>
 
   <div class="hc-body" id="hc-body"></div>
-
-  <div class="hc-foot">
-    <span id="hc-savestate">Cargando…</span>
-  </div>
 </div>
 
 <script>
@@ -306,7 +318,13 @@
   let state = { tasks: {}, custom: {}, deleted: {}, edits: {}, months: {}, kpis: {} };
   let activePhase = PHASES[0].id;
   const root = document.getElementById("hc-panel");
-  const saveEl = document.getElementById("hc-savestate");
+  const syncBar = document.getElementById("hc-syncbar");
+  const syncText = document.getElementById("hc-syncstate");
+
+  function setSync(kind, text) {
+    syncBar.className = "hc-syncbar" + (kind ? " " + kind : "");
+    syncText.textContent = text;
+  }
 
   function defaultKpis() {
     const obj = {};
@@ -316,14 +334,18 @@
 
   async function load() {
     if (APPS_SCRIPT_URL.indexOf("PEGA_AQUI") === 0) {
-      saveEl.textContent = "⚠️ Falta pegar la URL del Apps Script desplegado (ver code.gs / guía)";
+      setSync("error", "⚠️ Falta pegar la URL del Apps Script desplegado (ver code.gs / guía)");
       render();
       return;
     }
+    setSync(null, "Cargando desde Google Sheets…");
     try {
       const res = await storageGet(STORE_KEY);
       if (res && res.value) state = JSON.parse(res.value);
-    } catch (e) { /* no hay datos aún o el backend no está configurado */ }
+      setSync("synced", "Al día con Google Sheets");
+    } catch (e) {
+      setSync("error", "No se pudo conectar con Google Sheets — solo verás lo que hay en este dispositivo");
+    }
     if (!state.custom) state.custom = {};
     if (!state.tasks) state.tasks = {};
     if (!state.deleted) state.deleted = {};
@@ -345,15 +367,17 @@
 
   let saveTimer = null;
   async function save() {
-    saveEl.textContent = "Guardando…";
+    setSync("syncing", "Sincronizando con Google Sheets…");
     try {
       await storageSet(STORE_KEY, JSON.stringify(state));
-      saveEl.textContent = "Cambios guardados en Google Sheets · visible para las tres áreas";
+      const hora = new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+      setSync("synced", "Respaldado en Google Sheets · " + hora);
     } catch (e) {
-      saveEl.textContent = "No se pudo guardar. Revisa tu conexión o la configuración del backend.";
+      setSync("error", "No se pudo respaldar en Sheets — el cambio sigue solo en este dispositivo");
     }
   }
   function queueSave() {
+    setSync("local", "Cambio guardado en este dispositivo · sincronizando…");
     clearTimeout(saveTimer);
     saveTimer = setTimeout(save, 350);
   }
